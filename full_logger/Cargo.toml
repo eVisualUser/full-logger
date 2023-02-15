@@ -2,10 +2,13 @@
 name = "full_logger"
 version = "0.1.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+description = "Easy to use Log library"
+license = "MIT"
+readme = "README.md"
+keywords = ["ini", "csv", "toml", "log", "logger"]
+repository = "https://github.com/eVisualUser/full-logger"
 
 [dependencies]
-chrono = "0.4.23"
-pretty_ini = "0.1.6"
-toml_edit = "0.19.3"
+chrono = "0.4.23" # DateTime
+pretty_ini = "0.1.6" # File Format
+toml_edit = "0.19.3" # File Format
