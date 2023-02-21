@@ -44,8 +44,7 @@ pub fn log(file: &str, location: Vec<&str>, content: &str) {
                     let mut log = Variable::default();
                     let now = chrono::Local::now();
                     log.key = format!(
-                        "{}_Y{}_M{}_D{}_H{}_M{}_S{}_ML{}",
-                        location.first().unwrap(),
+                        "Y{}_M{}_D{}_H{}_M{}_S{}_ML{}",
                         now.year(),
                         now.month(),
                         now.day(),
@@ -66,8 +65,7 @@ pub fn log(file: &str, location: Vec<&str>, content: &str) {
                             let mut log = Variable::default();
                             let now = chrono::Local::now();
                             log.key = format!(
-                                "{}_Y{}_M{}_D{}_H{}_M{}_S{}_ML{}",
-                                location.first().unwrap(),
+                                "Y{}_M{}_D{}_H{}_M{}_S{}_ML{}",
                                 now.year(),
                                 now.month(),
                                 now.day(),

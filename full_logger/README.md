@@ -8,9 +8,11 @@ Easy to use logger for Rust
 Full support
 
 #### Example
+
 ```ini
 [error]
-ERROR_Y2023_M2_D15_H22_M44_S6_ML1676497446493 = Test
+Y2023_M2_D21_H18_M59_S27_ML1677002367767 = Test
+Y2023_M2_D21_H18_M59_S27_ML1677002367775 = RESULT_OK_"Test"
 ```
 
 ### TOML
@@ -18,13 +20,11 @@ ERROR_Y2023_M2_D15_H22_M44_S6_ML1676497446493 = Test
 Full support
 
 #### Example
+
 ```toml
 [error]
-
-[error.file]
-
-[error.file.debug]
-ERROR_Y2023_M2_D15_H22_M45_S3_ML1676497503389 = "Test"
+Y2023_M2_D21_H18_M57_S50_ML1677002270145 = "Test"
+Y2023_M2_D21_H18_M57_S50_ML1677002270150 = "RESULT_OK_\"Test\""
 ```
 
 ### CSV
@@ -34,7 +34,8 @@ Full support
 #### Example
 
 ```csv
-2023-02-15 22:46:05.745414400 +01:00;ERROR;Test;
+2023-02-21 19:00:17.771215200 +01:00;error;Test;
+2023-02-21 19:00:17.777826800 +01:00;error;RESULT_OK_"Test";
 ```
 
 ## Short-Tutorial
@@ -58,16 +59,14 @@ set_file_format(FileFormat::CSV);
 
 3. Time to Log
 ```rust
-// CSV don't support sub-classes
-let path = None;
-let log_type = "ERROR";
+let path = vec!["error", "debug"];
 let message = "Test";
 
-log(file, None, log_type, message);
+log(file, path, message);
 ```
 
 4. Enjoy
 
 ```csv
-2023-02-15 22:55:33.779135600 +01:00;ERROR;Test;
+2023-02-21 19:00:17.771215200 +01:00;error;Test;
 ```
