@@ -6,7 +6,6 @@ pub enum FileFormat {
     CSV,
     INI,
     TOML,
-    SYSLOG,
 }
 
 static mut FILE_FORMAT: FileFormat = FileFormat::CSV;
@@ -20,17 +19,16 @@ pub fn get_file_format() -> FileFormat {
 }
 
 #[allow(unused)]
-pub fn log(file: String, location: Option<Vec<String>>, class: &str, content: &str) {
+pub fn log(file: &str, location: Vec<&str>, content: &str) {
     match get_file_format() {
         FileFormat::CSV => {
             let mut file = std::fs::File::options().append(true).open(file).unwrap();
-            writeln!(
-                &mut file,
-                "{};{};{};",
-                chrono::Local::now().to_string(),
-                class,
-                content
-            );
+            let mut line = format!("{};", chrono::Local::now().to_string());
+            for loc in location {
+                line.push_str(&format!("{};", loc));
+            }
+            line.push_str(&format!("{};", content));
+            writeln!(&mut file, "{}", line);
         }
         FileFormat::INI => {
             use pretty_ini::{ini, ini_file, variable::Variable};
@@ -41,75 +39,51 @@ pub fn log(file: String, location: Option<Vec<String>>, class: &str, content: &s
             let mut ini = ini::Ini::default();
             ini.load(&mut ofile).unwrap();
 
-            match location {
-                Some(tree) => match ini.get_table_ref_mut(tree.first().unwrap()) {
-                    Ok(table) => {
-                        let mut log = Variable::default();
-                        let now = chrono::Local::now();
-                        log.key = format!(
-                            "{}_Y{}_M{}_D{}_H{}_M{}_S{}_ML{}",
-                            class,
-                            now.year(),
-                            now.month(),
-                            now.day(),
-                            now.hour(),
-                            now.minute(),
-                            now.second(),
-                            now.timestamp_millis()
-                        );
+            match ini.get_table_ref_mut(location.first().unwrap()) {
+                Ok(table) => {
+                    let mut log = Variable::default();
+                    let now = chrono::Local::now();
+                    log.key = format!(
+                        "{}_Y{}_M{}_D{}_H{}_M{}_S{}_ML{}",
+                        location.first().unwrap(),
+                        now.year(),
+                        now.month(),
+                        now.day(),
+                        now.hour(),
+                        now.minute(),
+                        now.second(),
+                        now.timestamp_millis()
+                    );
 
-                        log.value = String::from(content);
+                    log.value = String::from(content);
 
-                        table.add_variable(log);
-                    }
-                    Err(_) => {
-                        ini.create_table(tree.first().unwrap());
-                        match ini.get_table_ref_mut(tree.first().unwrap()) {
-                            Ok(table) => {
-                                let mut log = Variable::default();
-                                let now = chrono::Local::now();
-                                log.key = format!(
-                                    "{}_Y{}_M{}_D{}_H{}_M{}_S{}_ML{}",
-                                    class,
-                                    now.year(),
-                                    now.month(),
-                                    now.day(),
-                                    now.hour(),
-                                    now.minute(),
-                                    now.second(),
-                                    now.timestamp_millis()
-                                );
+                    table.add_variable(log);
+                }
+                Err(_) => {
+                    ini.create_table(location.first().unwrap());
+                    match ini.get_table_ref_mut(location.first().unwrap()) {
+                        Ok(table) => {
+                            let mut log = Variable::default();
+                            let now = chrono::Local::now();
+                            log.key = format!(
+                                "{}_Y{}_M{}_D{}_H{}_M{}_S{}_ML{}",
+                                location.first().unwrap(),
+                                now.year(),
+                                now.month(),
+                                now.day(),
+                                now.hour(),
+                                now.minute(),
+                                now.second(),
+                                now.timestamp_millis()
+                            );
 
-                                log.value = String::from(content);
+                            log.value = String::from(content);
 
-                                table.add_variable(log);
-                            }
-                            Err(_) => {}
+                            table.add_variable(log);
                         }
+                        Err(_) => (),
                     }
-                },
-                None => match ini.get_table_ref_mut(ini::TABLE_NAME_ROOT) {
-                    Ok(table) => {
-                        let mut log = Variable::default();
-                        let now = chrono::Local::now();
-                        log.key = format!(
-                            "{}_Y{}_M{}_D{}_H{}_M{}_S{}_ML{}",
-                            class,
-                            now.year(),
-                            now.month(),
-                            now.day(),
-                            now.hour(),
-                            now.minute(),
-                            now.second(),
-                            now.timestamp_millis()
-                        );
-
-                        log.value = String::from(content);
-
-                        table.add_variable(log);
-                    }
-                    Err(_) => (),
-                },
+                }
             }
 
             ofile.save(&mut ini);
@@ -121,7 +95,7 @@ pub fn log(file: String, location: Option<Vec<String>>, class: &str, content: &s
             let mut doc = file_content.parse::<Document>().expect("invalid xml doc");
 
             let mut table = doc.as_table_mut();
-            for path in location.unwrap() {
+            for path in location {
                 let mut exist = table.contains_table(&path);
 
                 if !exist {
@@ -137,8 +111,7 @@ pub fn log(file: String, location: Option<Vec<String>>, class: &str, content: &s
             let now = chrono::Local::now();
             table.insert(
                 &format!(
-                    "{}_Y{}_M{}_D{}_H{}_M{}_S{}_ML{}",
-                    class,
+                    "Y{}_M{}_D{}_H{}_M{}_S{}_ML{}",
                     now.year(),
                     now.month(),
                     now.day(),
@@ -152,7 +125,27 @@ pub fn log(file: String, location: Option<Vec<String>>, class: &str, content: &s
 
             std::fs::write(file, doc.to_string());
         }
-        FileFormat::SYSLOG => {}
         _ => todo!("File Format not supported yet"),
     }
+}
+
+pub fn log_result<O: std::fmt::Debug, E: std::fmt::Debug>(
+    file: &str,
+    location: Vec<&str>,
+    content: Result<O, E>,
+) -> Result<O, E> {
+    let log_content;
+
+    match &content {
+        Ok(log) => {
+            log_content = format!("RESULT_OK_{:?}", log);
+        }
+        Err(log) => {
+            log_content = format!("RESULT_ERR_{:?}", log);
+        }
+    }
+
+    log(file, location, &log_content);
+
+    content
 }
