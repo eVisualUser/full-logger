@@ -68,5 +68,5 @@ log(file, path, message);
 4. Enjoy
 
 ```csv
-2023-02-21 19:00:17.771215200 +01:00;error;Test;
+2023-02-21 19:00:17.771215200 +01:00;error;debug;Test;
 ```
