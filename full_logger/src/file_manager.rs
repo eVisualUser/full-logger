@@ -6,6 +6,9 @@ pub struct FileManager {
     pub dir: String,
     pub files: HashMap<String, u64>,
     pub max_size: u64,
+    pub prefix: Option<String>,
+    pub suffix: Option<String>,
+    pub file_extension: String,
 }
 
 impl FileManager {
@@ -31,6 +34,9 @@ impl FileManager {
             dir,
             files,
             max_size,
+            prefix: None,
+            suffix: None,
+            file_extension: String::from("log"),
         }
     }
 
@@ -43,15 +49,24 @@ impl FileManager {
 
         let now = chrono::Local::now();
         let file_name = format!(
-            "{}/Y{}_M{}_D{}-{}-{}-{}_ML{}.log",
+            "{}/{}Y{}_M{}_D{}-H{}_M{}_S{}_ML{}{}.{}",
             self.dir,
+            match &self.prefix {
+                Some(prefix) => prefix.clone(),
+                None => String::new(),
+            },
             now.year(),
             now.month(),
             now.day(),
             now.hour(),
             now.minute(),
             now.second(),
-            now.timestamp_millis()
+            now.timestamp_millis(),
+            match &self.suffix {
+                Some(suffix) => suffix.clone(),
+                None => String::new(),
+            },
+            self.file_extension
         );
         std::fs::File::options()
             .create(true)
@@ -60,5 +75,29 @@ impl FileManager {
             .unwrap();
 
         file_name
+    }
+
+    pub fn set_file_prefix(&mut self, prefix: String) {
+        self.prefix = Some(prefix);
+    }
+
+    pub fn set_file_prefix_str(&mut self, prefix: &str) {
+        self.set_file_prefix(prefix.to_owned());
+    }
+
+    pub fn set_file_suffix(&mut self, suffix: String) {
+        self.suffix = Some(suffix);
+    }
+
+    pub fn set_file_suffix_str(&mut self, suffix: &str) {
+        self.set_file_suffix(suffix.to_owned());
+    }
+
+    pub fn set_file_extension(&mut self, ext: String) {
+        self.file_extension = ext;
+    }
+
+    pub fn set_file_extension_str(&mut self, ext: &str) {
+        self.set_file_extension(ext.to_owned());
     }
 }
