@@ -38,16 +38,22 @@ Full support
 2023-02-21 19:00:17.777826800 +01:00;error;RESULT_OK_"Test";
 ```
 
-## Short-Tutorial
+## Getting-Started
 
 1. Manage Log Files
 ```rust
 let working_dir = String::from("log");
-let max_file_size = 1000000; // 1000000o
+let max_file_size = FileSize::Mo(100);
 let file_manager = FileManager::new(String::from("log"), max_file_size);
 
 // Get file path to a file under max_file_size (create one if necessary)
 let file = file_manager.get_file_path();
+
+// Allow console printing
+set_allow_console_log(true);
+
+// Setup simple logs
+set_or_create_global_log_file("log", FileSize::Mo(100));
 ```
 
 2. Set the file format
@@ -62,10 +68,19 @@ set_file_format(FileFormat::CSV);
 let path = vec!["error", "debug"];
 let message = "Test";
 
+let mut error = Result::<i32, i32>::Ok(12);
+
 log(file, path, message);
+error = log_result(file, path, error);
+
+// Or you can use the simple way (must have defined a global file before)
+simple_log(log, path, message);
+error = simple_log_result(log, path, error);
 ```
 
 4. Enjoy
+
+Here it's the result of a log calling ```log(file, path, message);```
 
 ```csv
 2023-02-21 19:00:17.771215200 +01:00;error;debug;Test;
