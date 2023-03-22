@@ -1,5 +1,26 @@
 use chrono::{Datelike, Timelike};
-use std::io::Write;
+use std::io::{ErrorKind, Write};
+use crate::file_manager;
+use crate::file_manager::FileSize;
+
+/// Specify the log file for simple_log/simple_log_result
+static mut GLOBAL_LOG_FILE: String = String::new();
+
+/// If true all logs will be printed to the console
+static mut ALLOW_CONSOLE_LOG: bool = false;
+
+/// Activate/Deactivate the console printing of the logs
+pub fn set_allow_console_log(allowed: bool) {
+    unsafe {
+        ALLOW_CONSOLE_LOG = allowed;
+    }
+}
+
+/// Define the file used by simple_log/simple_log_result
+pub fn set_or_create_global_log_file(dir: &str, max_size: FileSize) {
+    let manager = file_manager::FileManager::new(String::from(dir), max_size);
+    unsafe { GLOBAL_LOG_FILE = manager.get_file_path(); }
+}
 
 #[derive(Clone)]
 pub enum FileFormat {
@@ -18,8 +39,34 @@ pub fn get_file_format() -> FileFormat {
     unsafe { FILE_FORMAT.clone() }
 }
 
-#[allow(unused)]
-pub fn log(file: &str, location: Vec<&str>, content: &str) {
+/// Log the input to the global file and can print to console if allowed
+pub fn simple_log(location: Vec<&str>, content: &str) -> std::io::Result<()> {
+    log(unsafe{&GLOBAL_LOG_FILE}, location, content)
+}
+
+/// Log the input to the file and can print to console if allowed
+pub fn log(file: &str, location: Vec<&str>, content: &str) -> std::io::Result<()> {
+    if file.is_empty() {
+        return Err(std::io::Error::new(ErrorKind::NotFound, format!("Unable to create a log for {}", file)));
+    }
+
+    let now = chrono::Local::now();
+    let log_name = format!(
+        "Y{}_M{}_D{}_H{}_M{}_S{}_ML{}",
+        now.year(),
+        now.month(),
+        now.day(),
+        now.hour(),
+        now.minute(),
+        now.second(),
+        now.timestamp_millis()
+    );
+    drop(now);
+
+    if unsafe{ ALLOW_CONSOLE_LOG } {
+        println!("[{}] {}", log_name, content);
+    }
+
     match get_file_format() {
         FileFormat::CSV => {
             let mut file = std::fs::File::options().append(true).open(file).unwrap();
@@ -28,32 +75,21 @@ pub fn log(file: &str, location: Vec<&str>, content: &str) {
                 line.push_str(&format!("{};", loc));
             }
             line.push_str(&format!("{};", content));
-            writeln!(&mut file, "{}", line);
+            writeln!(&mut file, "{}", line)?;
         }
         FileFormat::INI => {
             use pretty_ini::{ini, ini_file, variable::Variable};
 
-            let mut ofile = ini_file::IniFile::default();
-            ofile.set_path(&file);
+            let mut ini_file = ini_file::IniFile::default();
+            ini_file.set_path(&file);
 
             let mut ini = ini::Ini::default();
-            ini.load(&mut ofile).unwrap();
+            ini.load(&mut ini_file).unwrap();
 
             match ini.get_table_ref_mut(location.first().unwrap()) {
                 Ok(table) => {
                     let mut log = Variable::default();
-                    let now = chrono::Local::now();
-                    log.key = format!(
-                        "Y{}_M{}_D{}_H{}_M{}_S{}_ML{}",
-                        now.year(),
-                        now.month(),
-                        now.day(),
-                        now.hour(),
-                        now.minute(),
-                        now.second(),
-                        now.timestamp_millis()
-                    );
-
+                    log.key = log_name;
                     log.value = String::from(content);
 
                     table.add_variable(log);
@@ -63,17 +99,7 @@ pub fn log(file: &str, location: Vec<&str>, content: &str) {
                     match ini.get_table_ref_mut(location.first().unwrap()) {
                         Ok(table) => {
                             let mut log = Variable::default();
-                            let now = chrono::Local::now();
-                            log.key = format!(
-                                "Y{}_M{}_D{}_H{}_M{}_S{}_ML{}",
-                                now.year(),
-                                now.month(),
-                                now.day(),
-                                now.hour(),
-                                now.minute(),
-                                now.second(),
-                                now.timestamp_millis()
-                            );
+                            log.key = log_name;
 
                             log.value = String::from(content);
 
@@ -84,7 +110,7 @@ pub fn log(file: &str, location: Vec<&str>, content: &str) {
                 }
             }
 
-            ofile.save(&mut ini);
+            ini_file.save(&mut ini);
         }
         FileFormat::TOML => {
             use toml_edit::{value, Document};
@@ -106,27 +132,23 @@ pub fn log(file: &str, location: Vec<&str>, content: &str) {
                 }
             }
 
-            let now = chrono::Local::now();
             table.insert(
-                &format!(
-                    "Y{}_M{}_D{}_H{}_M{}_S{}_ML{}",
-                    now.year(),
-                    now.month(),
-                    now.day(),
-                    now.hour(),
-                    now.minute(),
-                    now.second(),
-                    now.timestamp_millis()
-                ),
+                &log_name,
                 value(content),
             );
 
-            std::fs::write(file, doc.to_string());
+            std::fs::write(file, doc.to_string())?;
         }
-        _ => todo!("File Format not supported yet"),
     }
+    Ok(())
 }
 
+/// Log the input to the global file and can print to console if allowed
+pub fn simple_log_result<O: std::fmt::Debug, E: std::fmt::Debug>(location: Vec<&str>, content: Result<O, E>,) -> Result<O, E> {
+    log_result(unsafe{ &GLOBAL_LOG_FILE }, location, content)
+}
+
+/// Log the input to the file and can print to console if allowed
 pub fn log_result<O: std::fmt::Debug, E: std::fmt::Debug>(
     file: &str,
     location: Vec<&str>,
@@ -143,7 +165,7 @@ pub fn log_result<O: std::fmt::Debug, E: std::fmt::Debug>(
         }
     }
 
-    log(file, location, &log_content);
+    log(file, location, &log_content).unwrap();
 
     content
 }
