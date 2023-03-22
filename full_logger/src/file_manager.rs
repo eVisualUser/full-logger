@@ -2,6 +2,11 @@ use std::collections::HashMap;
 
 use chrono::{Datelike, Timelike};
 
+pub enum FileSize {
+    O(u64),
+    Mo(u64),
+}
+
 pub struct FileManager {
     pub dir: String,
     pub files: HashMap<String, u64>,
@@ -12,8 +17,13 @@ pub struct FileManager {
 }
 
 impl FileManager {
-    pub fn new(dir: String, max_size: u64) -> Self {
+    pub fn new(dir: String, max_size: FileSize) -> Self {
         let mut files = HashMap::<String, u64>::new();
+
+        let max_size = match max_size {
+            FileSize::O(size) => size,
+            FileSize::Mo(size) => size * 1000,
+        };
 
         if !std::path::Path::new(&dir).exists() {
             std::fs::create_dir(&dir).unwrap();
