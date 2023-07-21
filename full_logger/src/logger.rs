@@ -1,7 +1,6 @@
 use crate::file_manager;
 use crate::file_manager::FileSize;
 use chrono::{Datelike, Timelike};
-use fltk::prelude::*;
 use std::io::{ErrorKind, Write};
 
 /// Specify the log file for simple_log/simple_log_result
