@@ -1,6 +1,13 @@
 pub mod file_manager;
 pub mod logger;
 
+pub mod libraries {
+    pub use chrono;
+    pub use fltk;
+    pub use pretty_ini;
+    pub use toml_edit;
+}
+
 #[cfg(test)]
 pub mod test {
     use crate::{
