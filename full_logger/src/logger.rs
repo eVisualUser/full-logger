@@ -1,13 +1,23 @@
-use chrono::{Datelike, Timelike};
-use std::io::{ErrorKind, Write};
 use crate::file_manager;
 use crate::file_manager::FileSize;
+use chrono::{Datelike, Timelike};
+use fltk::prelude::*;
+use std::io::{ErrorKind, Write};
 
 /// Specify the log file for simple_log/simple_log_result
 static mut GLOBAL_LOG_FILE: String = String::new();
 
 /// If true all logs will be printed to the console
 static mut ALLOW_CONSOLE_LOG: bool = false;
+
+static mut MESSAGE_BOX_TRIGGER: Option<String> = None;
+
+// Define the location keyword to use the message box
+pub fn set_message_box_trigger(trigger: Option<String>) {
+    unsafe {
+        MESSAGE_BOX_TRIGGER = trigger;
+    }
+}
 
 /// Activate/Deactivate the console printing of the logs
 pub fn set_allow_console_log(allowed: bool) {
@@ -19,7 +29,9 @@ pub fn set_allow_console_log(allowed: bool) {
 /// Define the file used by simple_log/simple_log_result
 pub fn set_or_create_global_log_file(dir: &str, max_size: FileSize) {
     let manager = file_manager::FileManager::new(String::from(dir), max_size);
-    unsafe { GLOBAL_LOG_FILE = manager.get_file_path(); }
+    unsafe {
+        GLOBAL_LOG_FILE = manager.get_file_path();
+    }
 }
 
 #[derive(Clone)]
@@ -41,15 +53,11 @@ pub fn get_file_format() -> FileFormat {
 
 /// Log the input to the global file and can print to console if allowed
 pub fn simple_log(location: Vec<&str>, content: &str) -> std::io::Result<()> {
-    log(unsafe{&GLOBAL_LOG_FILE}, location, content)
+    log(unsafe { &GLOBAL_LOG_FILE }, location, content)
 }
 
 /// Log the input to the file and can print to console if allowed
 pub fn log(file: &str, location: Vec<&str>, content: &str) -> std::io::Result<()> {
-    if file.is_empty() {
-        return Err(std::io::Error::new(ErrorKind::NotFound, format!("Unable to create a log for {}", file)));
-    }
-
     let now = chrono::Local::now();
     let log_name = format!(
         "Y{}_M{}_D{}_H{}_M{}_S{}_ML{}",
@@ -63,7 +71,24 @@ pub fn log(file: &str, location: Vec<&str>, content: &str) -> std::io::Result<()
     );
     drop(now);
 
-    if unsafe{ ALLOW_CONSOLE_LOG } {
+    match unsafe { &MESSAGE_BOX_TRIGGER } {
+        Some(trigger) => {
+            if location.contains(&trigger.as_str()) {
+                fltk::dialog::message_title(&log_name);
+                fltk::dialog::alert(100, 100, content);
+            }
+        }
+        None => (),
+    }
+
+    if file.is_empty() {
+        return Err(std::io::Error::new(
+            ErrorKind::NotFound,
+            format!("Unable to create a log for {}", file),
+        ));
+    }
+
+    if unsafe { ALLOW_CONSOLE_LOG } {
         println!("[{}] {}", log_name, content);
     }
 
@@ -132,10 +157,7 @@ pub fn log(file: &str, location: Vec<&str>, content: &str) -> std::io::Result<()
                 }
             }
 
-            table.insert(
-                &log_name,
-                value(content),
-            );
+            table.insert(&log_name, value(content));
 
             std::fs::write(file, doc.to_string())?;
         }
@@ -144,8 +166,11 @@ pub fn log(file: &str, location: Vec<&str>, content: &str) -> std::io::Result<()
 }
 
 /// Log the input to the global file and can print to console if allowed
-pub fn simple_log_result<O: std::fmt::Debug, E: std::fmt::Debug>(location: Vec<&str>, content: Result<O, E>,) -> Result<O, E> {
-    log_result(unsafe{ &GLOBAL_LOG_FILE }, location, content)
+pub fn simple_log_result<O: std::fmt::Debug, E: std::fmt::Debug>(
+    location: Vec<&str>,
+    content: Result<O, E>,
+) -> Result<O, E> {
+    log_result(unsafe { &GLOBAL_LOG_FILE }, location, content)
 }
 
 /// Log the input to the file and can print to console if allowed

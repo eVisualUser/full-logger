@@ -12,3 +12,5 @@ Cargo.lock
 # Other
 **/demo/
 **/README.html
+
+**/*.log

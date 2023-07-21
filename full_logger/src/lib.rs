@@ -3,7 +3,10 @@ pub mod logger;
 
 #[cfg(test)]
 pub mod test {
-    use crate::{file_manager::{FileManager, FileSize}, logger::*};
+    use crate::{
+        file_manager::{FileManager, FileSize},
+        logger::*,
+    };
 
     #[test]
     pub fn global_test() {
@@ -17,6 +20,8 @@ pub mod test {
         set_file_format(FileFormat::CSV);
         set_allow_console_log(true);
         set_or_create_global_log_file("log", FileSize::Mo(100));
+
+        set_message_box_trigger(Some(String::from("error")));
 
         simple_log(vec!["error"], "Test").unwrap();
         log(&file, vec!["error"], "Test").unwrap();
