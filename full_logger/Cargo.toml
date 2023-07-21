@@ -1,11 +1,11 @@
 [package]
 name = "full_logger"
-version = "0.1.2"
+version = "0.1.3"
 edition = "2021"
 description = "Easy to use Log library"
 license = "MIT"
 readme = "README.md"
-keywords = ["ini", "csv", "toml", "log", "logger"]
+keywords = ["ini", "csv", "toml", "log", "logger", "message box"]
 repository = "https://github.com/eVisualUser/full-logger"
 
 [dependencies]
