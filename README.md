@@ -1,6 +1,12 @@
 # Full Logger
 Easy to use logger for Rust
 
+## Features
+
+- [X] Log system for multiple file formats.
+- [X] Log in the console
+- [X] Can use message box when log (use [fltk](https://crates.io/crates/fltk))
+
 ## Formats
 
 ### INI
@@ -54,6 +60,9 @@ set_allow_console_log(true);
 
 // Setup simple logs
 set_or_create_global_log_file("log", FileSize::Mo(100));
+
+// Add a message box when the log is an error.
+set_message_box_trigger("error");
 ```
 
 2. Set the file format
