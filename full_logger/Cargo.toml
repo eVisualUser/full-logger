@@ -5,7 +5,7 @@ edition = "2021"
 description = "Easy to use Log library"
 license = "MIT"
 readme = "README.md"
-keywords = ["ini", "csv", "toml", "log", "logger", "message-box"]
+keywords = ["ini", "csv", "toml", "log", "logger"]
 repository = "https://github.com/eVisualUser/full-logger"
 
 [dependencies]
