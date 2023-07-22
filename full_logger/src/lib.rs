@@ -36,5 +36,7 @@ pub mod test {
         let result: Result<&str, &str> = Ok("Test");
         simple_log_result(vec!["error"], result).unwrap();
         log_result(&file, vec!["error"], result).unwrap();
+
+        simple_log_option(vec!["error"], Some(10));
     }
 }

@@ -193,3 +193,30 @@ pub fn log_result<O: std::fmt::Debug, E: std::fmt::Debug>(
 
     content
 }
+
+/// Log the input to the global file and can print to console if allowed
+pub fn simple_log_option<O: std::fmt::Debug>(location: Vec<&str>, content: Option<O>) -> Option<O> {
+    log_option(unsafe { &GLOBAL_LOG_FILE }, location, content)
+}
+
+/// Log the input to the file and can print to console if allowed
+pub fn log_option<O: std::fmt::Debug>(
+    file: &str,
+    location: Vec<&str>,
+    content: Option<O>,
+) -> Option<O> {
+    let log_content;
+
+    match &content {
+        Some(log) => {
+            log_content = format!("Some({:?})", log);
+        }
+        None => {
+            log_content = "None".to_owned();
+        }
+    }
+
+    log(file, location, &log_content).unwrap();
+
+    content
+}
