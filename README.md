@@ -3,9 +3,10 @@ Easy to use logger for Rust
 
 ## Features
 
-- [X] Log system for multiple file formats.
-- [X] Log in the console
-- [X] Can use message box when log (use [fltk](https://crates.io/crates/fltk))
+- [X] Support few file formats.
+- [X] Console log.
+- [X] Message box using [fltk](https://crates.io/crates/fltk).
+- [X] Support logs of Result and Option.
 
 ## Formats
 
