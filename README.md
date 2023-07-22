@@ -51,7 +51,7 @@ Full support
 ```rust
 let working_dir = String::from("log");
 let max_file_size = FileSize::Mo(100);
-let file_manager = FileManager::new(String::from("log"), max_file_size);
+let file_manager = FileManager::new(working_dir, max_file_size);
 
 // Get file path to a file under max_file_size (create one if necessary)
 let file = file_manager.get_file_path();
