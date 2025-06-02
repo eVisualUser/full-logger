@@ -105,7 +105,7 @@ pub fn log(file: &str, location: Vec<&str>, content: &str) -> std::io::Result<()
     if unsafe { !LOG_SERVER_URL.is_empty() } {
         let request = format!(
             "{}/log/{}/{}/{}",
-            unsafe { LOG_SERVER_URL },
+            unsafe { LOG_SERVER_URL.clone() },
             "full-logger",
             location.first().unwrap_or(&"debug"),
             content
@@ -120,7 +120,7 @@ pub fn log(file: &str, location: Vec<&str>, content: &str) -> std::io::Result<()
             }
             Err(e) => {
                 eprintln!("Failed to send log to server: {}", e);
-                LOG_SERVER_URL.clear(); // Clear the URL to prevent further attempts
+                unsafe { LOG_SERVER_URL.clear(); } // Clear the URL to prevent further attempts
             }
         }
     }
