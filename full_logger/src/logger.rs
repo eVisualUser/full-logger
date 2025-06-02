@@ -2,6 +2,7 @@ use crate::file_manager;
 use crate::file_manager::FileSize;
 use chrono::{Datelike, Timelike};
 use std::io::{ErrorKind, Write};
+use curl::easy::Easy;
 
 /// Specify the log file for simple_log/simple_log_result
 static mut GLOBAL_LOG_FILE: String = String::new();
@@ -10,6 +11,9 @@ static mut GLOBAL_LOG_FILE: String = String::new();
 static mut ALLOW_CONSOLE_LOG: bool = false;
 
 static mut MESSAGE_BOX_TRIGGER: Option<String> = None;
+
+/// Allow to use logging GUI app: https://github.com/eVisualUser/log-server
+static mut LOG_SERVER_URL: String = String::new();
 
 // Define the location keyword to use the message box
 pub fn set_message_box_trigger(trigger: Option<String>) {
@@ -22,6 +26,13 @@ pub fn set_message_box_trigger(trigger: Option<String>) {
 pub fn set_allow_console_log(allowed: bool) {
     unsafe {
         ALLOW_CONSOLE_LOG = allowed;
+    }
+}
+
+/// Allow to use logging GUI app: https://github.com/eVisualUser/log-server
+pub fn set_log_server(url: String) {
+    unsafe {
+        LOG_SERVER_URL = url;
     }
 }
 
@@ -68,7 +79,7 @@ pub fn log(file: &str, location: Vec<&str>, content: &str) -> std::io::Result<()
         now.second(),
         now.timestamp_millis()
     );
-    drop(now);
+    let _ = now;
 
     match unsafe { &MESSAGE_BOX_TRIGGER } {
         Some(trigger) => {
@@ -89,6 +100,29 @@ pub fn log(file: &str, location: Vec<&str>, content: &str) -> std::io::Result<()
 
     if unsafe { ALLOW_CONSOLE_LOG } {
         println!("[{}] {}", log_name, content);
+    }
+
+    if unsafe { !LOG_SERVER_URL.is_empty() } {
+        let request = format!(
+            "{}/log/{}/{}/{}",
+            unsafe { LOG_SERVER_URL },
+            "full-logger",
+            location.first().unwrap_or(&"debug"),
+            content
+        );
+
+        let mut easy = Easy::new();
+        easy.url(request.as_str()).unwrap();
+
+        match easy.perform() {
+            Ok(_) => {
+                // Do nothing
+            }
+            Err(e) => {
+                eprintln!("Failed to send log to server: {}", e);
+                LOG_SERVER_URL.clear(); // Clear the URL to prevent further attempts
+            }
+        }
     }
 
     match get_file_format() {
@@ -134,7 +168,7 @@ pub fn log(file: &str, location: Vec<&str>, content: &str) -> std::io::Result<()
                 }
             }
 
-            ini_file.save(&mut ini);
+            ini_file.save(&mut ini, None).unwrap();
         }
         FileFormat::TOML => {
             use toml_edit::{value, Document};

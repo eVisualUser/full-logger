@@ -10,6 +10,7 @@ repository = "https://github.com/eVisualUser/full-logger"
 
 [dependencies]
 chrono = "0.4.23" # DateTime
-pretty_ini = "0.1.6" # File Format
+pretty_ini = "0.1.8" # File Format
 toml_edit = "0.19.3" # File Format
 fltk = "1.4.8"
+curl = "0.4.47"
