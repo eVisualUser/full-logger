@@ -1,4 +1,5 @@
-use crate::file_manager;
+use crate::thread::log_thread_enabled;
+use crate::{file_manager, thread::launch_task};
 use crate::file_manager::FileSize;
 use chrono::{Datelike, Timelike};
 use std::io::{ErrorKind, Write};
@@ -62,13 +63,34 @@ pub fn get_file_format() -> FileFormat {
 }
 
 /// Log the input to the global file and can print to console if allowed
-pub fn simple_log(location: Vec<&str>, content: &str) -> std::io::Result<()> {
+pub fn simple_log(location: Vec<&str>, content: &str) {
     log(unsafe { &GLOBAL_LOG_FILE }, location, content)
 }
 
+pub fn log(file: &str, location: Vec<&str>, content: &str) {
+    if log_thread_enabled() {
+        let location_owned: Vec<String> = location.iter().map(|s| s.to_string()).collect();
+        let file = file.to_string().clone();
+        let content = content.to_string().clone();
+
+        launch_task(Box::new(move || {
+            // Move ownership of the string data into the closure, ensuring 'static lifetime
+            let location_str: Vec<&str> = location_owned.iter().map(|s| s.as_str()).collect();
+
+            log_internal(file.as_str(), location_str, content.as_str()).unwrap_or_else(|e| {
+                eprintln!("Failed to log to file '{}': {}", file, e);
+            });
+        }), 1);
+    } else {
+        log_internal(file, location, content).unwrap_or_else(|e| {
+            eprintln!("Failed to log to file '{}': {}", file, e);
+        });
+    }
+}
+
 /// Log the input to the file and can print to console if allowed
-pub fn log(file: &str, location: Vec<&str>, content: &str) -> std::io::Result<()> {
-    let now = chrono::Local::now();
+fn log_internal(file: &str, location: Vec<&str>, content: &str) -> std::io::Result<()> {
+    let now: chrono::DateTime<chrono::Local> = chrono::Local::now();
     let log_name = format!(
         "Y{}_M{}_D{}_H{}_M{}_S{}_ML{}",
         now.year(),
@@ -173,7 +195,7 @@ pub fn log(file: &str, location: Vec<&str>, content: &str) -> std::io::Result<()
         FileFormat::TOML => {
             use toml_edit::{value, Document};
 
-            let file_content = std::fs::read_to_string(file.clone()).unwrap();
+            let file_content = std::fs::read_to_string(file).unwrap();
             let mut doc = file_content.parse::<Document>().expect("invalid xml doc");
 
             let mut table = doc.as_table_mut();
@@ -223,7 +245,7 @@ pub fn log_result<O: std::fmt::Debug, E: std::fmt::Debug>(
         }
     }
 
-    log(file, location, &log_content).unwrap();
+    log(file, location, &log_content);
 
     content
 }
@@ -250,7 +272,7 @@ pub fn log_option<O: std::fmt::Debug>(
         }
     }
 
-    log(file, location, &log_content).unwrap();
+    log(file, location, &log_content);
 
     content
 }

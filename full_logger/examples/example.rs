@@ -12,8 +12,8 @@ fn main() {
     set_allow_console_log(true);
     set_or_create_global_log_file("log", FileSize::Mo(100));
 
-    simple_log(vec!["error"], "Test").unwrap();
-    log(&file, vec!["error"], "Test").unwrap();
+    simple_log(vec!["error"], "Test");
+    log(&file, vec!["error"], "Test");
 
     let result: Result<&str, &str> = Ok("Test");
     simple_log_result(vec!["error"], result).unwrap();

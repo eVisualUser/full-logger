@@ -1,5 +1,8 @@
+#![allow(static_mut_refs)]
+
 pub mod file_manager;
 pub mod logger;
+pub mod thread;
 
 pub mod libraries {
     pub use chrono;
@@ -12,7 +15,7 @@ pub mod libraries {
 pub mod test {
     use crate::{
         file_manager::{FileManager, FileSize},
-        logger::*,
+        logger::*, thread::{flush_log_thread, start_log_thread},
     };
 
     #[test]
@@ -27,16 +30,21 @@ pub mod test {
         set_file_format(FileFormat::CSV);
         set_allow_console_log(true);
         set_or_create_global_log_file("log", FileSize::Mo(100));
+        set_log_server("http://localhost:8000".to_string());
+        
+        start_log_thread(10, 1);
 
         set_message_box_trigger(Some(String::from("error")));
 
-        simple_log(vec!["error"], "Test").unwrap();
-        log(&file, vec!["error"], "Test").unwrap();
+        simple_log(vec!["error"], "Test");
+        log(&file, vec!["error"], "Test");
 
         let result: Result<&str, &str> = Ok("Test");
         simple_log_result(vec!["error"], result).unwrap();
         log_result(&file, vec!["error"], result).unwrap();
 
         simple_log_option(vec!["error"], Some(10));
+
+        flush_log_thread(1);
     }
 }
