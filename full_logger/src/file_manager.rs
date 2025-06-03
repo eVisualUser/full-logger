@@ -7,6 +7,7 @@ pub enum FileSize {
     Mo(u64),
 }
 
+/// A struct to manage log files, including their creation and management based on size.
 pub struct FileManager {
     pub dir: String,
     pub files: HashMap<String, u64>,
@@ -50,6 +51,7 @@ impl FileManager {
         }
     }
 
+    /// Returns the path of a file that is less than the maximum size.
     pub fn get_file_path(&self) -> String {
         for file in &self.files {
             if file.1 < &self.max_size {
@@ -87,26 +89,32 @@ impl FileManager {
         file_name
     }
 
+    /// Set the file prefix for the log files.
     pub fn set_file_prefix(&mut self, prefix: String) {
         self.prefix = Some(prefix);
     }
 
+    /// Set the file prefix for the log files.
     pub fn set_file_prefix_str(&mut self, prefix: &str) {
         self.set_file_prefix(prefix.to_owned());
     }
 
+    /// Set the file suffix for the log files.
     pub fn set_file_suffix(&mut self, suffix: String) {
         self.suffix = Some(suffix);
     }
 
+    /// Set the file suffix for the log files.
     pub fn set_file_suffix_str(&mut self, suffix: &str) {
         self.set_file_suffix(suffix.to_owned());
     }
 
+    /// Set the file extention for the log files.
     pub fn set_file_extension(&mut self, ext: String) {
         self.file_extension = ext;
     }
 
+    /// Set the file extention for the log files.
     pub fn set_file_extension_str(&mut self, ext: &str) {
         self.set_file_extension(ext.to_owned());
     }

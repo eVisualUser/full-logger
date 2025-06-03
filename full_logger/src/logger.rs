@@ -11,6 +11,7 @@ static mut GLOBAL_LOG_FILE: String = String::new();
 /// If true all logs will be printed to the console
 static mut ALLOW_CONSOLE_LOG: bool = false;
 
+/// If true show a FLTK message box when the log location matches the trigger
 static mut MESSAGE_BOX_TRIGGER: Option<String> = None;
 
 /// Allow to use logging GUI app: https://github.com/eVisualUser/log-server
@@ -54,10 +55,12 @@ pub enum FileFormat {
 
 static mut FILE_FORMAT: FileFormat = FileFormat::CSV;
 
+/// Set the file format used for logging
 pub fn set_file_format(ff: FileFormat) {
     unsafe { FILE_FORMAT = ff }
 }
 
+/// Get the current file format used for logging
 pub fn get_file_format() -> FileFormat {
     unsafe { FILE_FORMAT.clone() }
 }
@@ -67,6 +70,7 @@ pub fn simple_log(location: Vec<&str>, content: &str) {
     log(unsafe { &GLOBAL_LOG_FILE }, location, content)
 }
 
+/// Log the input to the file and can print to console if allowed
 pub fn log(file: &str, location: Vec<&str>, content: &str) {
     if log_thread_enabled() {
         let location_owned: Vec<String> = location.iter().map(|s| s.to_string()).collect();
@@ -88,7 +92,7 @@ pub fn log(file: &str, location: Vec<&str>, content: &str) {
     }
 }
 
-/// Log the input to the file and can print to console if allowed
+/// Internal function to log the content to the specified file
 fn log_internal(file: &str, location: Vec<&str>, content: &str) -> std::io::Result<()> {
     let now: chrono::DateTime<chrono::Local> = chrono::Local::now();
     let log_name = format!(

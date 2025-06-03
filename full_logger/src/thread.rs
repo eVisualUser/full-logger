@@ -68,6 +68,7 @@ pub fn launch_task(task: Box<dyn Fn()>, iteration_cooldown_in_milli: u64)
     }
 }
 
+/// Return true if the log thread is enabled and running, false otherwise.
 pub fn log_thread_enabled() -> bool {
     unsafe { LOG_THREAD.is_some() }
 }
