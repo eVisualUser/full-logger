@@ -1,8 +1,9 @@
 use crate::thread::log_thread_enabled;
-use crate::{file_manager, thread::launch_task};
-use crate::file_manager::FileSize;
+use crate::thread::launch_task;
 use chrono::{Datelike, Timelike};
 use std::io::{ErrorKind, Write};
+
+#[cfg(feature="log_server")]
 use curl::easy::Easy;
 
 /// Specify the log file for simple_log/simple_log_result
@@ -39,25 +40,24 @@ pub fn set_log_server(url: String) {
 }
 
 /// Define the file used by simple_log/simple_log_result
-pub fn set_or_create_global_log_file(dir: &str, max_size: FileSize) {
-    let manager = file_manager::FileManager::new(String::from(dir), max_size);
+pub fn set_or_create_global_log_file(file: &str) {
     unsafe {
-        GLOBAL_LOG_FILE = manager.get_file_path();
+        GLOBAL_LOG_FILE = file.to_owned();
     }
 }
 
 #[derive(Clone)]
 pub enum FileFormat {
     CSV,
-    INI,
-    TOML,
+    #[cfg(feature="message_box")]
+    INI
 }
 
 static mut FILE_FORMAT: FileFormat = FileFormat::CSV;
 
 /// Set the file format used for logging
-pub fn set_file_format(ff: FileFormat) {
-    unsafe { FILE_FORMAT = ff }
+pub fn set_file_format(file_format: FileFormat) {
+    unsafe { FILE_FORMAT = file_format }
 }
 
 /// Get the current file format used for logging
@@ -65,12 +65,27 @@ pub fn get_file_format() -> FileFormat {
     unsafe { FILE_FORMAT.clone() }
 }
 
-/// Log the input to the global file and can print to console if allowed
+/// Log the input to the file and can print to console if allowed
+/// ## Parameters
+/// - location: could be defined as error level, example: ```["io", "error"]```
+/// - content: ```&str``` containing your message
+/// ## Example
+/// ```rust
+/// simple_log(["io", "error"], "This is an IO error!");
+/// ```
 pub fn simple_log(location: Vec<&str>, content: &str) {
     log(unsafe { &GLOBAL_LOG_FILE }, location, content)
 }
 
 /// Log the input to the file and can print to console if allowed
+/// ## Parameters
+/// - file: target file where the log will be saved
+/// - location: could be defined as error level, example: ```["io", "error"]```
+/// - content: ```&str``` containing your message
+/// ## Example
+/// ```rust
+/// log("my/super/file/path.log", ["io", "error"], "This is an IO error!");
+/// ```
 pub fn log(file: &str, location: Vec<&str>, content: &str) {
     if log_thread_enabled() {
         let location_owned: Vec<String> = location.iter().map(|s| s.to_string()).collect();
@@ -107,6 +122,7 @@ fn log_internal(file: &str, location: Vec<&str>, content: &str) -> std::io::Resu
     );
     let _ = now;
 
+    #[cfg(feature="message_box")]
     match unsafe { &MESSAGE_BOX_TRIGGER } {
         Some(trigger) => {
             if location.contains(&trigger.as_str()) {
@@ -128,6 +144,7 @@ fn log_internal(file: &str, location: Vec<&str>, content: &str) -> std::io::Resu
         println!("[{}] {}", log_name, content);
     }
 
+    #[cfg(feature="log_server")]
     if unsafe { !LOG_SERVER_URL.is_empty() } {
         let request = format!(
             "{}/log/{}/{}/{}",
@@ -161,6 +178,7 @@ fn log_internal(file: &str, location: Vec<&str>, content: &str) -> std::io::Resu
             line.push_str(&format!("{};", content));
             writeln!(&mut file, "{}", line)?;
         }
+        #[cfg(feature="message_box")]
         FileFormat::INI => {
             use pretty_ini::{ini, ini_file, variable::Variable};
 
@@ -196,35 +214,19 @@ fn log_internal(file: &str, location: Vec<&str>, content: &str) -> std::io::Resu
 
             ini_file.save(&mut ini, None).unwrap();
         }
-        FileFormat::TOML => {
-            use toml_edit::{value, Document};
-
-            let file_content = std::fs::read_to_string(file).unwrap();
-            let mut doc = file_content.parse::<Document>().expect("invalid xml doc");
-
-            let mut table = doc.as_table_mut();
-            for path in location {
-                let mut exist = table.contains_table(&path);
-
-                if !exist {
-                    table.insert(&path, toml_edit::Item::Table(toml_edit::Table::new()));
-                    exist = true;
-                }
-
-                if exist {
-                    table = table[&path].as_table_mut().unwrap();
-                }
-            }
-
-            table.insert(&log_name, value(content));
-
-            std::fs::write(file, doc.to_string())?;
-        }
     }
     Ok(())
 }
 
-/// Log the input to the global file and can print to console if allowed
+/// Log the input to the file and can print to console if allowed
+/// ## Parameters
+/// - location: could be defined as error level, example: ```["io", "error"]```
+/// - content: Result to be handled
+/// ## Example
+/// ```rust
+/// let result: Result<&str, &str> = Ok("Test");
+/// simple_log_result(vec!["error"], result).unwrap();
+/// ```
 pub fn simple_log_result<O: std::fmt::Debug, E: std::fmt::Debug>(
     location: Vec<&str>,
     content: Result<O, E>,
@@ -233,6 +235,15 @@ pub fn simple_log_result<O: std::fmt::Debug, E: std::fmt::Debug>(
 }
 
 /// Log the input to the file and can print to console if allowed
+/// ## Parameters
+/// - file: target file where the log will be saved
+/// - location: could be defined as error level, example: ```["io", "error"]```
+/// - content: Result to be handled
+/// ## Example
+/// ```rust
+/// let result: Result<&str, &str> = Ok("Test");
+/// log_result("my/super/file/path.log", vec!["error"], result).unwrap();
+/// ```
 pub fn log_result<O: std::fmt::Debug, E: std::fmt::Debug>(
     file: &str,
     location: Vec<&str>,
@@ -254,12 +265,27 @@ pub fn log_result<O: std::fmt::Debug, E: std::fmt::Debug>(
     content
 }
 
-/// Log the input to the global file and can print to console if allowed
+/// Log the input to the file and can print to console if allowed
+/// ## Parameters
+/// - location: could be defined as error level, example: ```["io", "error"]```
+/// - content: Option to be handled
+/// ## Example
+/// ```rust
+/// simple_log_option(vec!["error"], Some(10));
+/// ```
 pub fn simple_log_option<O: std::fmt::Debug>(location: Vec<&str>, content: Option<O>) -> Option<O> {
     log_option(unsafe { &GLOBAL_LOG_FILE }, location, content)
 }
 
 /// Log the input to the file and can print to console if allowed
+/// ## Parameters
+/// - file: target file where the log will be saved
+/// - location: could be defined as error level, example: ```["io", "error"]```
+/// - content: Option to be handled
+/// ## Example
+/// ```rust
+/// log_option("my/super/file/path.log", vec!["error"], Some(10));
+/// ```
 pub fn log_option<O: std::fmt::Debug>(
     file: &str,
     location: Vec<&str>,

@@ -7,10 +7,10 @@ fn main() {
     file_manager.set_file_extension_str("log");
 
     let file = file_manager.get_file_path();
+    set_or_create_global_log_file(file.as_str());
 
     set_file_format(FileFormat::CSV);
     set_allow_console_log(true);
-    set_or_create_global_log_file("log", FileSize::Mo(100));
 
     simple_log(vec!["error"], "Test");
     log(&file, vec!["error"], "Test");

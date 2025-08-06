@@ -1,4 +1,5 @@
 # Full Logger
+
 Easy to use logger for Rust
 
 ## Features
@@ -12,8 +13,6 @@ Easy to use logger for Rust
 
 ### INI
 
-Full support
-
 #### Example
 
 ```ini
@@ -22,21 +21,7 @@ Y2023_M2_D21_H18_M59_S27_ML1677002367767 = Test
 Y2023_M2_D21_H18_M59_S27_ML1677002367775 = RESULT_OK_"Test"
 ```
 
-### TOML
-
-Full support
-
-#### Example
-
-```toml
-[error]
-Y2023_M2_D21_H18_M57_S50_ML1677002270145 = "Test"
-Y2023_M2_D21_H18_M57_S50_ML1677002270150 = "RESULT_OK_\"Test\""
-```
-
 ### CSV
-
-Full support
 
 #### Example
 
@@ -60,16 +45,12 @@ let file = file_manager.get_file_path();
 set_allow_console_log(true);
 
 // Setup simple logs
-set_or_create_global_log_file("log", FileSize::Mo(100));
-
-// Add a message box when the log is an error.
-set_message_box_trigger("error");
+set_or_create_global_log_file(file.as_str());
 ```
 
 2. Set the file format
 
 ```rust
-// Do not need other code
 set_file_format(FileFormat::CSV);
 ```
 

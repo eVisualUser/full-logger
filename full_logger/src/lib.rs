@@ -6,9 +6,10 @@ pub mod thread;
 
 pub mod libraries {
     pub use chrono;
+    #[cfg(feature="message_box")]
     pub use fltk;
+    #[cfg(feature="ini_support")]
     pub use pretty_ini;
-    pub use toml_edit;
 }
 
 #[cfg(test)]
@@ -20,16 +21,16 @@ pub mod test {
 
     #[test]
     pub fn global_test() {
-        let mut file_manager = FileManager::new(String::from("log"), FileSize::Mo(100));
+        let mut file_manager = FileManager::new(String::from("log"), FileSize::Mo(10));
         file_manager.set_file_prefix_str("DEMO_");
         file_manager.set_file_suffix_str("_LOG");
         file_manager.set_file_extension_str("log");
 
         let file = file_manager.get_file_path();
+        set_or_create_global_log_file(file.as_str());
 
         set_file_format(FileFormat::CSV);
         set_allow_console_log(true);
-        set_or_create_global_log_file("log", FileSize::Mo(100));
         set_log_server("http://localhost:8000".to_string());
         
         start_log_thread(10, 1);
@@ -44,6 +45,7 @@ pub mod test {
         log_result(&file, vec!["error"], result).unwrap();
 
         simple_log_option(vec!["error"], Some(10));
+        log_option(&file, vec!["error"], Some(10));
 
         flush_log_thread(1);
     }

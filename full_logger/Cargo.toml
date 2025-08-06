@@ -1,18 +1,23 @@
 [package]
 name = "full_logger"
-version = "0.1.4"
+version = "0.1.5"
 edition = "2021"
 description = "Easy to use Log library"
 license = "MIT"
 readme = "README.md"
-keywords = ["ini", "csv", "toml", "log", "logger"]
+keywords = ["ini", "csv", "log", "logger"]
 repository = "https://github.com/eVisualUser/full-logger"
 
 authors = ["eVisualUser <crates.io.italics170@passinbox.com>"]
 
 [dependencies]
 chrono = "0.4.23" # DateTime
-pretty_ini = "0.1.8" # File Format
-toml_edit = "0.19.3" # File Format
-fltk = "1.4.8"
-curl = "0.4.47"
+
+pretty_ini = { version="0.1.8", optional=true } # File Format
+curl = { version="0.4.47", optional=true }
+fltk = { version="1.4.8", optional=true }
+
+[features]
+message_box = [ "fltk" ]
+ini_support = ["pretty_ini"]
+log_server = ["curl"]

@@ -4,6 +4,7 @@ use chrono::{Datelike, Timelike};
 
 pub enum FileSize {
     O(u64),
+    Ko(u64),
     Mo(u64),
 }
 
@@ -23,7 +24,8 @@ impl FileManager {
 
         let max_size = match max_size {
             FileSize::O(size) => size,
-            FileSize::Mo(size) => size * 1000,
+            FileSize::Ko(size) => size * 1024,
+            FileSize::Mo(size) => size * 1048576,
         };
 
         if !std::path::Path::new(&dir).exists() {
